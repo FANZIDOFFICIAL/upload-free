@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>FANZID Upload</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="card" id="drop">
+  <h1>FANZID</h1>
+  <p class="sub">Upload Image / Video / File (Max 10MB)</p>
+
+  <input type="file" id="file" hidden>
+  <div class="drop-zone" onclick="file.click()">
+    <span id="text">Klik atau drop file</span>
+    <img id="imgPreview">
+    <video id="vidPreview" controls></video>
+  </div>
+
+  <div class="progress">
+    <div id="bar"></div>
+  </div>
+
+  <button onclick="upload()">Upload</button>
+
+  <div class="result">
+    <input id="url" readonly placeholder="URL hasil upload">
+    <button onclick="copy()">Copy</button>
+  </div>
+
+  <footer>© FANZID OFFICIAL</footer>
+</div>
+
+<script>
+const file = document.getElementById("file");
+const drop = document.getElementById("drop");
+const img = document.getElementById("imgPreview");
+const vid = document.getElementById("vidPreview");
+const bar = document.getElementById("bar");
+const text = document.getElementById("text");
+let selected;
+
+file.onchange = () => preview(file.files[0]);
+
+drop.ondragover = e => {
+  e.preventDefault();
+  drop.classList.add("hover");
+};
+
+drop.ondragleave = () => drop.classList.remove("hover");
+
+drop.ondrop = e => {
+  e.preventDefault();
+  drop.classList.remove("hover");
+  preview(e.dataTransfer.files[0]);
+};
+
+function preview(f){
+  if(!f) return;
+  if(f.size > 10*1024*1024) return alert("Max 10MB");
+
+  selected = f;
+  img.style.display = vid.style.display = "none";
+
+  if(f.type.startsWith("image")){
+    img.src = URL.createObjectURL(f);
+    img.style.display = "block";
+  } else if(f.type.startsWith("video")){
+    vid.src = URL.createObjectURL(f);
+    vid.style.display = "block";
+  }
+
+  text.innerText = f.name + " (" + (f.size/1024/1024).toFixed(2) + " MB)";
+}
+
+function upload(){
+  if(!selected) return alert("Pilih file dulu");
+
+  const fd = new FormData();
+  fd.append("file", selected);
+
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", "/upload");
+
+  xhr.upload.onprogress = e => {
+    bar.style.width = (e.loaded / e.total * 100) + "%";
+  };
+
+  xhr.onload = () => {
+    const j = JSON.parse(xhr.responseText);
+    if(j.success){
+      document.getElementById("url").value = j.url;
+    } else alert("Upload gagal");
+  };
+
+  xhr.send(fd);
+}
+
+function copy(){
+  navigator.clipboard.writeText(url.value);
+  alert("Copied!");
+}
+</script>
+
+</body>
+</html>
